@@ -83,6 +83,9 @@ void DHook_HookGamerules()
 
 public MRESReturn DHook_DoAnimationEventPre(int iClient, Handle hParams)
 {
+	if (!g_bEnabled)
+		return MRES_Ignored;
+
 	if (g_ClientClasses[iClient].callback_anim != INVALID_FUNCTION)
 	{
 		PlayerAnimEvent_t nAnim = DHookGetParam(hParams, 1);
@@ -153,11 +156,17 @@ public MRESReturn DHook_DeactivatePre(int iThis, Handle hParams)
 
 public MRESReturn DHook_CalculateMaxSpeedPre(Address pAddress, Handle hReturn, Handle hParams)
 {
+	if (!g_bEnabled)
+		return;
+
 	g_iDHookCalculateMaxSpeedClient = SDKCall_GetBaseEntity(pAddress);
 }
 
 public MRESReturn DHook_CalculateMaxSpeedPost(Address pAddress, Handle hReturn, Handle hParams)
 {
+	if (!g_bEnabled)
+		return MRES_Ignored;
+
 	int iClient = g_iDHookCalculateMaxSpeedClient;
 	
 	if (IsClientInGame(iClient) && IsPlayerAlive(iClient))
@@ -242,6 +251,9 @@ public MRESReturn DHook_CalculateMaxSpeedPost(Address pAddress, Handle hReturn, 
 
 public MRESReturn DHook_OnGiveNamedItemPre(int iClient, Handle hReturn, Handle hParams)
 {
+	if (!g_bEnabled)
+		return MRES_Ignored;
+
 	// Block if one of the pointers is null
 	if (DHookIsNullParam(hParams, 1) || DHookIsNullParam(hParams, 3))
 	{
@@ -267,6 +279,9 @@ public MRESReturn DHook_OnGiveNamedItemPre(int iClient, Handle hReturn, Handle h
 
 public void DHook_OnGiveNamedItemRemoved(int iHookId)
 {
+	if (!g_bEnabled)
+		return;
+
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
 		if (g_iHookIdGiveNamedItem[iClient] == iHookId)
@@ -279,6 +294,9 @@ public void DHook_OnGiveNamedItemRemoved(int iHookId)
 
 public MRESReturn DHook_SetWinningTeamPre(Handle hParams)
 {
+	if (!g_bEnabled)
+		return MRES_Ignored;
+
 	DHookSetParam(hParams, 4, false);	// always return false to bSwitchTeams
 	return MRES_ChangedOverride;
 }
