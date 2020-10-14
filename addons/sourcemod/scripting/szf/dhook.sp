@@ -443,6 +443,8 @@ public MRESReturn DHook_RoundRespawnPre()
 
 public MRESReturn DHook_GetCaptureValueForPlayerPre(Handle hReturn, Handle hParams)
 {
+	if(!g_bEnabled) return MRES_Ignored;
+
 	int iClient = DHookGetParam(hParams, 1);
 	if (TF2_GetPlayerClass(iClient) == TFClass_Scout) //Reduce capture rate for scout
 	{

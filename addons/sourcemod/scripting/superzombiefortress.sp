@@ -503,6 +503,9 @@ public void OnPluginStart()
 
 public void OnLibraryAdded(const char[] sName)
 {
+	if(!g_bEnabled)
+		return;
+
 	if (StrEqual(sName, "TF2Items"))
 	{
 		g_bTF2Items = true;
@@ -515,6 +518,9 @@ public void OnLibraryAdded(const char[] sName)
 
 public void OnLibraryRemoved(const char[] sName)
 {
+	if(!g_bEnabled)
+		return;
+
 	if (StrEqual(sName, "TF2Items"))
 	{
 		g_bTF2Items = false;
@@ -614,6 +620,9 @@ void GetMapSettings()
 
 public void OnClientPutInServer(int iClient)
 {
+	if(!g_bEnabled)
+		return;
+
 	CreateTimer(10.0, Timer_InitialHelp, iClient, TIMER_FLAG_NO_MAPCHANGE);
 	
 	DHook_HookGiveNamedItem(iClient);
@@ -642,6 +651,9 @@ public void OnClientDisconnect(int iClient)
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)
 {
+	if(!g_bEnabled)
+		return;
+
 	if (StrContains(sClassname, "item_healthkit") == 0 || StrContains(sClassname, "item_ammopack") == 0 || StrEqual(sClassname, "tf_ammo_pack"))
 		SDKHook_HookPickup(iEntity);
 	else if (StrEqual(sClassname, "tf_gas_manager"))
@@ -1592,6 +1604,8 @@ public void OnMapStart()
 
 public Action OnRelayTrigger(const char[] sOutput, int iCaller, int iActivator, float flDelay)
 {
+	if(!g_bEnabled) return;
+
 	char sTargetName[255];
 	GetEntPropString(iCaller, Prop_Data, "m_iName", sTargetName, sizeof(sTargetName));
 	
@@ -1624,6 +1638,8 @@ public Action OnRelayTrigger(const char[] sOutput, int iCaller, int iActivator, 
 
 public Action OnCounterValue(const char[] sOutput, int iCaller, int iActivator, float flDelay)
 {
+	if(!g_bEnabled) return;
+
 	char sTargetName[128];
 	GetEntPropString(iCaller, Prop_Data, "m_iName", sTargetName, sizeof(sTargetName));
 	
@@ -2198,6 +2214,9 @@ bool DropCarryingItem(int iClient, bool bDrop = true)
 
 public Action SoundHook(int iClients[64], int &iLength, char sSound[PLATFORM_MAX_PATH], int &iClient, int &iChannel, float &flVolume, int &iLevel, int &iPitch, int &iFlags)
 {
+	if(!g_bEnabled)
+		return Plugin_Continue;
+
 	if (!IsValidClient(iClient))
 		return Plugin_Continue;
 	
@@ -2310,6 +2329,8 @@ void InitiateSurvivorTutorial(int iClient)
 
 void InitiateZombieTutorial(int iClient)
 {
+	if(!g_bEnabled) return;
+
 	DataPack data;
 	CreateDataTimer(1.0, Timer_DisplayTutorialMessage, data);
 	data.WriteCell(iClient);
@@ -2367,6 +2388,9 @@ public Action Timer_DisplayTutorialMessage(Handle hTimer, DataPack data)
 
 public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fVelocity[3], float fAngles[3], int &iWeapon)
 {
+	if(!g_bEnabled)
+		return Plugin_Continue;
+
 	if (IsValidLivingZombie(iClient))
 	{
 		if (g_ClientClasses[iClient].callback_think != INVALID_FUNCTION)
@@ -2432,6 +2456,9 @@ public Action RemoveBackstab(Handle hTimer, int iClient)
 
 Action OnGiveNamedItem(int iClient, const char[] sClassname, int iIndex)
 {
+	if(!g_bEnabled)
+		return Plugin_Continue;
+
 	if (g_bGiveNamedItemSkip || TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
 		return Plugin_Continue;
 	

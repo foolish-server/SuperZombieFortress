@@ -479,6 +479,9 @@ public Action Event_PlayerBuiltObject(Event event, const char[] name, bool dontB
 
 public Action Event_CPCapture(Event event, const char[] name, bool dontBroadcast)
 {
+	if (!g_bEnabled)
+		return;
+
 	if (g_iControlPoints <= 0) 
 		return;
 	
@@ -507,6 +510,9 @@ public Action Event_CPCapture(Event event, const char[] name, bool dontBroadcast
 
 public Action Event_CPCaptureStart(Event event, const char[] name, bool dontBroadcast)
 {
+	if (!g_bEnabled)
+		return;
+
 	if (g_iControlPoints <= 0)
 		return;
 	
@@ -523,6 +529,9 @@ public Action Event_CPCaptureStart(Event event, const char[] name, bool dontBroa
 
 public Action Event_Broadcast(Event event, const char[] name, bool dontBroadcast)
 {
+	if (!g_bEnabled)
+		return Plugin_Continue;
+
 	char sSound[20];
 	event.GetString("sound", sSound, sizeof(sSound));
 	
