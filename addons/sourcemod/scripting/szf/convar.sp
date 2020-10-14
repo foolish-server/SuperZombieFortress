@@ -46,9 +46,8 @@ void ConVar_Add(const char[] sConVar, float flValue)
 	info.hConVar = FindConVar(sConVar);
 	info.flSZFValue = flValue;
 	g_aConVar.PushArray(info);
-	
-	info.hConVar.AddChangeHook(ConVar_OnChanged);
 }
+
 
 void ConVar_Enable()
 {
@@ -61,6 +60,7 @@ void ConVar_Enable()
 		g_aConVar.SetArray(i, info);
 		
 		info.hConVar.FloatValue = info.flSZFValue;
+		info.hConVar.AddChangeHook(ConVar_OnChanged);
 	}
 }
 
@@ -71,6 +71,8 @@ void ConVar_Disable()
 	{
 		ConVarInfo info;
 		g_aConVar.GetArray(i, info);
+		
+		info.hConVar.RemoveChangeHook(ConVar_OnChanged);
 		info.hConVar.FloatValue = info.flDefaultValue;
 	}
 }
