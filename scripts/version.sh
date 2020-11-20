@@ -2,13 +2,13 @@
 cd build/addons/sourcemod/scripting
 
 # Get plugin version
-export PLUGIN_VERSION=$(sed -En '/#define PLUGIN_VERSION\W/p' superzombiefortress.sp)
+export 'PLUGIN_VERSION=${{sed -En "/#define PLUGIN_VERSION\W/p" superzombiefortress.sp}}' >> $GITHUB_ENV
 echo 'PLUGIN_VERSION=${{echo $PLUGIN_VERSION | grep -o '[0-9]*\.[0-9]*\.[0-9]*'}}' >> $GITHUB_ENV
 
 
 
 # Get revision
-export PLUGIN_VERSION_REVISION=$(git rev-list --count HEAD)
+export 'PLUGIN_VERSION_REVISION=${{git rev-list --count HEAD}}' >> $GITHUB_ENV
 echo 'PLUGIN_VERSION_REVISION=${{PLUGIN_VERSION_REVISION}}' >> $GITHUB_ENV
 
 # Set revision to superzombiefortress.sp
