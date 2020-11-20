@@ -12,4 +12,4 @@ export 'PLUGIN_VERSION_REVISION=${{git rev-list --count HEAD}}' >> $GITHUB_ENV
 echo 'PLUGIN_VERSION_REVISION=${{PLUGIN_VERSION_REVISION}}' >> $GITHUB_ENV
 
 # Set revision to superzombiefortress.sp
-sed '-i -e 's/#define PLUGIN_VERSION_REVISION.*".*"/#define PLUGIN_VERSION_REVISION "'$PLUGIN_VERSION_REVISION'"/g' superzombiefortress.sp' >> $GITHUB_ENV
+sed '-i -e ${{s/#define PLUGIN_VERSION_REVISION.*".*"/#define PLUGIN_VERSION_REVISION "'$PLUGIN_VERSION_REVISION'"/g}} superzombiefortress.sp' >> $GITHUB_ENV
