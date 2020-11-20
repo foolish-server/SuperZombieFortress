@@ -314,7 +314,7 @@ stock bool IsMapSZF()
 	GetCurrentMap(sMap, sizeof(sMap));
 	GetMapDisplayName(sMap, sMap, sizeof(sMap));
 	
-	if (StrContains(sMap, "szf_") == 0)
+	if (StrContains(sMap, "szf_", false) != -1) 
 		return true;
 	
 	return false;
