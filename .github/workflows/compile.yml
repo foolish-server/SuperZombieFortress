@@ -9,16 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: ACTIONS_ALLOW_UNSECURE_COMMANDS
-        id: ACTIONS_ALLOW_UNSECURE_COMMANDS
-        run: echo 'ACTIONS_ALLOW_UNSECURE_COMMANDS=true' >> $GITHUB_ENV
-    
       - name: Checkout
         uses: actions/checkout@v1
       
       - name: Environments
         run: |
-          echo 'SM_VERSION=1.10' >> $GITHUB_ENV
+          echo "SM_VERSION=1.10" >> $GITHUB_ENV
       
       - name: Install
         run: |
