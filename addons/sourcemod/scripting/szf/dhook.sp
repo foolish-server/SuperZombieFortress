@@ -1,9 +1,7 @@
-static Handle g_hDHookSetWinningTeam;
-static Handle g_hDHookRoundRespawn;
-static Handle g_hDHookGiveNamedItem;
-static Handle g_hDHookGetCaptureValueForPlayer;
-
-static int g_iDHookCalculateMaxSpeedClient;
+static DynamicHook g_hDHookSetWinningTeam;
+static DynamicHook g_hDHookRoundRespawn;
+static DynamicHook g_hDHookGiveNamedItem;
+static DynamicHook g_hDHookGetCaptureValueForPlayer;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS];
 
@@ -12,7 +10,7 @@ void DHook_Init(GameData hSZF)
 	DHook_CreateDetour(hSZF, "CTFPlayer::DoAnimationEvent", DHook_DoAnimationEventPre, _);
 	DHook_CreateDetour(hSZF, "CTFPlayerShared::DetermineDisguiseWeapon", DHook_DetermineDisguiseWeaponPre, _);
 	DHook_CreateDetour(hSZF, "CGameUI::Deactivate", DHook_DeactivatePre, _);
-	DHook_CreateDetour(hSZF, "CTFPlayer::TeamFortress_CalculateMaxSpeed", DHook_CalculateMaxSpeedPre, DHook_CalculateMaxSpeedPost);
+	DHook_CreateDetour(hSZF, "CTFPlayer::TeamFortress_CalculateMaxSpeed", _, DHook_CalculateMaxSpeedPost);
 	
 	g_hDHookSetWinningTeam = DHook_CreateVirtual(hSZF, "CTeamplayRoundBasedRules::SetWinningTeam");
 	g_hDHookRoundRespawn = DHook_CreateVirtual(hSZF, "CTeamplayRoundBasedRules::RoundRespawn");
@@ -22,28 +20,28 @@ void DHook_Init(GameData hSZF)
 
 static void DHook_CreateDetour(GameData gamedata, const char[] name, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION)
 {
-	Handle detour = DHookCreateFromConf(gamedata, name);
-	if (!detour)
+	DynamicDetour hDetour = DynamicDetour.FromConf(gamedata, name);
+	if (!hDetour)
 	{
 		LogError("Failed to create detour: %s", name);
 	}
 	else
 	{
 		if (preCallback != INVALID_FUNCTION)
-			if (!DHookEnableDetour(detour, false, preCallback))
+			if (!hDetour.Enable(Hook_Pre, preCallback))
 				LogError("Failed to enable pre detour: %s", name);
 		
 		if (postCallback != INVALID_FUNCTION)
-			if (!DHookEnableDetour(detour, true, postCallback))
+			if (!hDetour.Enable(Hook_Post, postCallback))
 				LogError("Failed to enable post detour: %s", name);
 		
-		delete detour;
+		delete hDetour;
 	}
 }
 
-static Handle DHook_CreateVirtual(GameData hGameData, const char[] sName)
+static DynamicHook DHook_CreateVirtual(GameData hGameData, const char[] sName)
 {
-	Handle hHook = DHookCreateFromConf(hGameData, sName);
+	DynamicHook hHook = DynamicHook.FromConf(hGameData, sName);
 	if (!hHook)
 		LogError("Failed to create hook: %s", sName);
 	
@@ -76,20 +74,20 @@ bool DHook_IsGiveNamedItemActive()
 
 void DHook_HookGamerules()
 {
-	DHookGamerules(g_hDHookSetWinningTeam, false, _, DHook_SetWinningTeamPre);
-	DHookGamerules(g_hDHookRoundRespawn, false, _, DHook_RoundRespawnPre);
-	DHookGamerules(g_hDHookGetCaptureValueForPlayer, true, _, DHook_GetCaptureValueForPlayerPre);
+	g_hDHookSetWinningTeam.HookGamerules(Hook_Pre, DHook_SetWinningTeamPre);
+	g_hDHookRoundRespawn.HookGamerules(Hook_Pre, DHook_RoundRespawnPre);
+	g_hDHookGetCaptureValueForPlayer.HookGamerules(Hook_Post, DHook_GetCaptureValueForPlayerPost);
 }
 
-public MRESReturn DHook_DoAnimationEventPre(int iClient, Handle hParams)
+public MRESReturn DHook_DoAnimationEventPre(int iClient, DHookParam hParams)
 {
 	if (!g_bEnabled)
 		return MRES_Ignored;
 
 	if (g_ClientClasses[iClient].callback_anim != INVALID_FUNCTION)
 	{
-		PlayerAnimEvent_t nAnim = DHookGetParam(hParams, 1);
-		int iData = DHookGetParam(hParams, 2);
+		PlayerAnimEvent_t nAnim = hParams.Get(1);
+		int iData = hParams.Get(2);
 		
 		Call_StartFunction(null, g_ClientClasses[iClient].callback_anim);
 		Call_PushCell(iClient);
@@ -104,8 +102,8 @@ public MRESReturn DHook_DoAnimationEventPre(int iClient, Handle hParams)
 		
 		if (action == Plugin_Changed)
 		{
-			DHookSetParam(hParams, 1, nAnim);
-			DHookSetParam(hParams, 2, iData);
+			hParams.Set(1, nAnim);
+			hParams.Set(2, iData);
 			return MRES_ChangedOverride;
 		}
 	}
@@ -113,7 +111,7 @@ public MRESReturn DHook_DoAnimationEventPre(int iClient, Handle hParams)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_DetermineDisguiseWeaponPre(Address pPlayerShared, Handle hParams)
+public MRESReturn DHook_DetermineDisguiseWeaponPre(Address pPlayerShared, DHookParam hParams)
 {
 	if (!g_bEnabled)
 		return MRES_Ignored;
@@ -133,11 +131,11 @@ public MRESReturn DHook_DetermineDisguiseWeaponPre(Address pPlayerShared, Handle
 	}
 	
 	//Never allow force primary, for both survivor and zombie disguise team
-	DHookSetParam(hParams, 1, false);
+	hParams.Set(1, false);
 	return MRES_ChangedOverride;
 }
 
-public MRESReturn DHook_DeactivatePre(int iThis, Handle hParams)
+public MRESReturn DHook_DeactivatePre(int iThis, DHookParam hParams)
 {
 	if (!g_bEnabled)
 		return MRES_Ignored;
@@ -148,33 +146,23 @@ public MRESReturn DHook_DeactivatePre(int iThis, Handle hParams)
 	int iEntity = 0;
 	while ((iEntity = FindEntityByClassname(iEntity, "*")) != -1)
 	{
-		DHookSetParam(hParams, 1, GetEntityAddress(iEntity));
+		hParams.Set(1, GetEntityAddress(iEntity));
 		return MRES_ChangedHandled;
 	}
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_CalculateMaxSpeedPre(Address pAddress, Handle hReturn, Handle hParams)
-{
-	if (!g_bEnabled)
-		return;
-
-	g_iDHookCalculateMaxSpeedClient = SDKCall_GetBaseEntity(pAddress);
-}
-
-public MRESReturn DHook_CalculateMaxSpeedPost(Address pAddress, Handle hReturn, Handle hParams)
+public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, DHookReturn hReturn)
 {
 	if (!g_bEnabled)
 		return MRES_Ignored;
 
-	int iClient = g_iDHookCalculateMaxSpeedClient;
-	
 	if (IsClientInGame(iClient) && IsPlayerAlive(iClient))
 	{
 		//Handle speed bonuses.
 		if ((!TF2_IsPlayerInCondition(iClient, TFCond_Slowed) && !TF2_IsPlayerInCondition(iClient, TFCond_Dazed)) || g_bBackstabbed[iClient])
 		{
-			float flSpeed = DHookGetReturn(hReturn);
+			float flSpeed = hReturn.Value;
 			
 			if (IsZombie(iClient))
 			{
@@ -241,7 +229,7 @@ public MRESReturn DHook_CalculateMaxSpeedPost(Address pAddress, Handle hReturn, 
 					flSpeed *= 0.66;
 			}
 			
-			DHookSetReturn(hReturn, flSpeed);
+			hReturn.Value = flSpeed;
 			return MRES_Override;
 		}
 	}
@@ -249,28 +237,28 @@ public MRESReturn DHook_CalculateMaxSpeedPost(Address pAddress, Handle hReturn, 
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_OnGiveNamedItemPre(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_OnGiveNamedItemPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	if (!g_bEnabled)
 		return MRES_Ignored;
 
 	// Block if one of the pointers is null
-	if (DHookIsNullParam(hParams, 1) || DHookIsNullParam(hParams, 3))
+	if (hParams.IsNull(1) || hParams.IsNull(3))
 	{
-		DHookSetReturn(hReturn, 0);
+		hReturn.Value = 0;
 		return MRES_Supercede;
 	}
 	
 	char sClassname[256];
-	DHookGetParamString(hParams, 1, sClassname, sizeof(sClassname));
+	hParams.GetString(1, sClassname, sizeof(sClassname));
 	
-	int iIndex = DHookGetParamObjectPtrVar(hParams, 3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
+	int iIndex = hParams.GetObjectVar(3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
 	
 	Action iAction = OnGiveNamedItem(iClient, sClassname, iIndex);
 	
 	if (iAction == Plugin_Handled)
 	{
-		DHookSetReturn(hReturn, 0);
+		hReturn.Value = 0;
 		return MRES_Supercede;
 	}
 	
@@ -292,12 +280,12 @@ public void DHook_OnGiveNamedItemRemoved(int iHookId)
 	}
 }
 
-public MRESReturn DHook_SetWinningTeamPre(Handle hParams)
+public MRESReturn DHook_SetWinningTeamPre(DHookParam hParams)
 {
 	if (!g_bEnabled)
 		return MRES_Ignored;
 
-	DHookSetParam(hParams, 4, false);	// always return false to bSwitchTeams
+	hParams.Set(4, false);	// always return false to bSwitchTeams
 	return MRES_ChangedOverride;
 }
 
@@ -459,14 +447,15 @@ public MRESReturn DHook_RoundRespawnPre()
 	UpdateZombieDamageScale();
 }
 
-public MRESReturn DHook_GetCaptureValueForPlayerPre(Handle hReturn, Handle hParams)
+public MRESReturn DHook_GetCaptureValueForPlayerPost(DHookReturn hReturn, DHookParam hParams)
 {
-	if(!g_bEnabled) return MRES_Ignored;
+	if(!g_bEnabled) 
+		return MRES_Ignored;
 
-	int iClient = DHookGetParam(hParams, 1);
+	int iClient = hParams.Get(1);
 	if (TF2_GetPlayerClass(iClient) == TFClass_Scout) //Reduce capture rate for scout
 	{
-		DHookSetReturn(hReturn, DHookGetReturn(hReturn) - 1);
+		hReturn.Value--;
 		return MRES_Supercede;
 	}
 	
