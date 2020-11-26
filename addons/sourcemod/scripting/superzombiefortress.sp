@@ -19,7 +19,7 @@
 
 #include "include/superzombiefortress.inc"
 
-#define PLUGIN_VERSION				"4.1.0"
+#define PLUGIN_VERSION				"4.1.1"
 #define PLUGIN_VERSION_REVISION		"manual"
 
 #define TF_MAXPLAYERS		34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
@@ -1621,11 +1621,11 @@ public Action OnRelayTrigger(const char[] sOutput, int iCaller, int iActivator, 
 	char sTargetName[255];
 	GetEntPropString(iCaller, Prop_Data, "m_iName", sTargetName, sizeof(sTargetName));
 	
-	if(StrEqual("szf_panic_event", sTargetName))
+	if (StrEqual("szf_panic_event", sTargetName))
 	{
 		ZombieRage(_, true);
 	}
-	else if (StrContains("szf_zombierage", sTargetName) == 0)
+	else if (StrContains(sTargetName, "szf_zombierage") == 0)
 	{
 		ReplaceString(sTargetName, sizeof(sTargetName), "szf_zombierage_", "");
 		float time = StringToFloat(sTargetName);
