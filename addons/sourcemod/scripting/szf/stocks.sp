@@ -338,22 +338,19 @@ stock void FireRelay(const char[] sInput, const char[] sTargetName1, const char[
 
 stock void TF2_EndRound(TFTeam nTeam)
 {
-	int iIndex = FindEntityByClassname(-1, "team_control_point_master");
-	if (iIndex == -1)
-	{
-		iIndex = CreateEntityByName("team_control_point_master");
-		DispatchSpawn(iIndex);
-	}
+	int iIndex = CreateEntityByName("game_round_win");
+	DispatchKeyValue(iIndex, "force_map_reset", "1");
+	DispatchSpawn(iIndex);
 	
 	if (iIndex == -1)
 	{
-		LogError("[SZF] Can't create 'team_control_point_master,' can't end round!");
+		LogError("[SZF] Can't create 'game_round_win', can't end round!");
 	}
 	else
 	{
-		AcceptEntityInput(iIndex, "Enable");
 		SetVariantInt(view_as<int>(nTeam));
-		AcceptEntityInput(iIndex, "SetWinner");
+		AcceptEntityInput(iIndex, "SetTeam");
+		AcceptEntityInput(iIndex, "RoundWin");
 	}
 }
 
@@ -996,20 +993,25 @@ stock void Shake(int iClient, float flAmplitude, float flDuration)
 	EndMessage();
 }
 
-stock void SpawnPickup(int iClient, const char[] sClassname)
+stock int SpawnPickup(int iEntity, const char[] sClassname, bool bTemp=true)
 {
 	float vecOrigin[3];
-	GetClientAbsOrigin(iClient, vecOrigin);
+	GetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", vecOrigin);
 	vecOrigin[2] += 16.0;
 	
-	int iEntity = CreateEntityByName(sClassname);
-	DispatchKeyValue(iEntity, "OnPlayerTouch", "!self,Kill,,0,-1");
-	if (DispatchSpawn(iEntity))
+	int iPickup = CreateEntityByName(sClassname);
+	
+	if (bTemp)
+		DispatchKeyValue(iPickup, "OnPlayerTouch", "!self,Kill,,0,-1");
+	
+	if (DispatchSpawn(iPickup))
 	{
-		SetEntProp(iEntity, Prop_Send, "m_iTeamNum", 0, 4);
-		TeleportEntity(iEntity, vecOrigin, NULL_VECTOR, NULL_VECTOR);
-		CreateTimer(0.15, Timer_KillEntity, EntIndexToEntRef(iEntity));
+		SetEntProp(iPickup, Prop_Send, "m_iTeamNum", 0, 4);
+		TeleportEntity(iPickup, vecOrigin, NULL_VECTOR, NULL_VECTOR);
+		if (bTemp)
+			CreateTimer(0.15, Timer_KillEntity, EntIndexToEntRef(iPickup));
 	}
+	return iPickup;
 }
 
 public Action Timer_KillEntity(Handle hTimer, int iRef)
