@@ -19,7 +19,7 @@
 
 #include "include/superzombiefortress.inc"
 
-#define PLUGIN_VERSION				"4.1.3"
+#define PLUGIN_VERSION				"4.1.4"
 #define PLUGIN_VERSION_REVISION		"manual"
 
 #define TF_MAXPLAYERS		34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
@@ -724,6 +724,8 @@ public void TF2_OnConditionRemoved(int iClient, TFCond nCond)
 	
 	if (nCond == TFCond_Taunting)
 		ViewModel_Hide(iClient);
+	else if (nCond == TFCond_Disguised)
+		SetEntProp(iClient, Prop_Send, "m_nModelIndexOverrides", 0, _, VISION_MODE_ROME);	//Reset disguise model
 }
 
 public Action TF2_OnIsHolidayActive(TFHoliday nHoliday, bool &bResult)
@@ -1340,13 +1342,10 @@ void ResetClientState(int iClient)
 
 void PrintInfoChat(int iClient)
 {
-	char sMessage[256];
-	Format(sMessage, sizeof(sMessage), "%t", "Welcome", "{lightsalmon}", "{limegreen}", "{lightsalmon}");
-	
 	if (iClient == 0)
-		CPrintToChatAll(sMessage);
+		CPrintToChatAll("%t", "Welcome", "{lightsalmon}", "{limegreen}", "{lightsalmon}");
 	else
-		CPrintToChat(iClient, sMessage);
+		CPrintToChat(iClient, "%t", "Welcome", "{lightsalmon}", "{limegreen}", "{lightsalmon}");
 }
 
 void SetGlow()
